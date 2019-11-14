@@ -240,7 +240,7 @@ class Generator:
 
         sheet.merge_cells('A1:D1')
 
-        sheet['A1'] = 'LTP Test report' #+ str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        sheet['A1'] = 'LTP Test report'  # + str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
         sheet['A3'] = 'Module'
         sheet['B3'] = 'Test Case'
         sheet['C3'] = 'Result'
