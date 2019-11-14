@@ -211,7 +211,7 @@ class Generator:
         labels = Reference(worksheet, min_col=current_column, min_row=current_row, max_row=current_row + 2)
         data = Reference(worksheet, min_col=current_column + 1, min_row=current_row, max_row=current_row + 2)
 
-        # worksheet.auto_filter.ref = 'A5:C1766'
+        # worksheet.auto_filter.ref  = 'A5:C1766'
         # worksheet.auto_filter.add_sort_condition('A{0}:A{1}'.format(5, 1766))
 
         chart.add_data(data)
