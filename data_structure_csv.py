@@ -67,6 +67,7 @@ class Generator:
 
     @staticmethod
     def git_runtest_extract_data(git_folder):
+        """ Extracts the data from the git runner dir which has the modules with testcases """
         project_folder = Path(__file__).parent
         path = os.path.join(project_folder, git_folder)
         run_test_path = os.path.join(path, Generator.git_path_with_tcas)
@@ -87,18 +88,19 @@ class Generator:
                                 tca = TestCaseGit(words[0])
                                 module.append_test_case(tca)
 
-    ''' search the testcase name in the git data structure and return the report name, if not found return current tca name'''
     @staticmethod
     def get_module_from_testcasename(tca):
+        """ search the testcase name in the git data structure and return the report name, if not found return current tca name """
         for module in Generator.report_git._listModules:
             for testcase in module._listTestCases:
                 if testcase._testCaseName in tca._testCaseName:
                     return module._name
         return tca._testCaseName
 
-    '''extract the data from the csv lava report and apppend it on the data structure'''
+
     @staticmethod
     def file_parser_ltp(report_file):
+        """extracts the data from the csv lava report and apppend it on the data structure"""
         with open(report_file) as csvDataFile:
             csv_reader = csv.reader(csvDataFile)
             for row in csv_reader:
@@ -126,9 +128,9 @@ class Generator:
         Generator.report_csv.percentageConf = round(Generator.report_csv.nrTotalSkipped * 100 / Generator.report_csv.nrTotalTest, 2)
         Generator.report_csv.percentageFail = round(Generator.report_csv.nrTotalFailures * 100 / Generator.report_csv.nrTotalTest, 2)
 
-    '''helper method to see the data colected in the data_structure'''
     @staticmethod
     def list_test_cases():
+        """helper method to see the data colected in the data_structure"""
         for module in Generator.report_git._listModules:
             print('Module name: ', module._name)
             for tca in module._listTestCases:
