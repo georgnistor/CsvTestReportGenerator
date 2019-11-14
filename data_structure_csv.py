@@ -6,6 +6,7 @@ import csv
 from pathlib import Path
 import os
 
+
 class TestCase:
     def __init__(self, tca, result, exitcode):
         self._testCaseName = tca
@@ -136,9 +137,9 @@ class Generator:
             for tca in module._listTestCases:
                 print('TestCase: ', 'name: ', tca._testCaseName)
 
-    '''append data into the worksheet'''
     @staticmethod
     def append_data_into_cells(worksheet):
+        """append data into the worksheet"""
         current_row = 5
         current_column = 1
         my_red = colors.Color(colors.RED)
@@ -223,10 +224,9 @@ class Generator:
         chart.style = 10
         worksheet.add_chart(chart, "F3")
 
-
-    '''format the excel sheet'''
     @staticmethod
     def format_excel_sheet():
+        """ format the excel sheet """
         # Create a workbook
         workbook = Workbook()
         sheet = workbook.active
