@@ -25,9 +25,8 @@ Generator.git_runtest_extract_data(path_ltp_git)
 Generator.file_parser_ltp(ltp___reportFile)
 
 """optional (output from the data_structure)"""
-#Generator.list_test_cases()
+Generator.list_test_cases()
 
 Generator.format_excel_sheet()
-#george
 
 

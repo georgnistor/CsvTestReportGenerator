@@ -132,7 +132,7 @@ class Generator:
         for module in Generator.report_git._listModules:
             print('Module name: ', module._name)
             for tca in module._listTestCases:
-                print('TestCase: ', 'name: ', tca._testCaseName, ' result:', tca._result)
+                print('TestCase: ', 'name: ', tca._testCaseName)
 
     '''append data into the worksheet'''
     @staticmethod
