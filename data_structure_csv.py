@@ -2,6 +2,7 @@ from data_structure_git import *
 from openpyxl.styles import Font, colors, fills
 from openpyxl.workbook import Workbook
 from openpyxl.chart import DoughnutChart, Reference
+from openpyxl import load_workbook
 import csv
 from pathlib import Path
 import os
@@ -57,7 +58,8 @@ class ReportData:
 class Generator:
     pass_str = 'pass'
     fail_str = 'fail'
-    conf_str = 'skip'
+    skip_str = 'skip'
+    conf_str = 'conf'
     total_tests = 'Total Tests'
     skipped_test = 'Total Skipped'
     total_failures = 'Total Failures'
@@ -65,6 +67,7 @@ class Generator:
     git_path_with_tcas= 'runtest'
     report_csv = ReportData()
     report_git = ReportDataGit()
+    workbook = Workbook()
 
     @staticmethod
     def git_runtest_extract_data(git_folder):
@@ -109,21 +112,27 @@ class Generator:
                     continue
 
                 Generator.report_csv.nrTotalTest += 1
-                test_case = TestCase(row[11], row[2], 'N/A')
+                result_tca = row[2]
+                name_tca = row[11]
+
+                if result_tca == Generator.skip_str:
+                    result_tca = Generator.conf_str
+
+                test_case = TestCase(name_tca, result_tca, 'N/A')
                 module_name_from_git = Generator.get_module_from_testcasename(test_case)
                 test_case._module_git = module_name_from_git
                 module = Module(row[1])
                 module.append_test_case(test_case)
                 Generator.report_csv.append_module(module)
-                result = row[2]
-                if Generator.pass_str in result:
+
+                if Generator.pass_str in result_tca:
                     Generator.report_csv.nrTotalPass += 1
-                elif Generator.fail_str in result:
+                elif Generator.fail_str in result_tca:
                     Generator.report_csv.nrTotalFailures += 1
-                elif Generator.conf_str in result:
+                elif Generator.skip_str in result_tca:
                     Generator.report_csv.nrTotalSkipped += 1
-                else:
-                    print("Error parsing")
+                else: # is a conf test case
+                    Generator.report_csv.nrTotalSkipped += 1
 
         Generator.report_csv.percentagePass = round(Generator.report_csv.nrTotalPass * 100 / Generator.report_csv.nrTotalTest, 2)
         Generator.report_csv.percentageConf = round(Generator.report_csv.nrTotalSkipped * 100 / Generator.report_csv.nrTotalTest, 2)
@@ -162,6 +171,11 @@ class Generator:
                     worksheet.cell(row=current_row, column=current_column).fill = my_fill_red
                 else:
                     worksheet.cell(row=current_row, column=current_column).fill = my_fill_pink
+
+                current_column += 3
+                worksheet.cell(row=current_row, column=current_column).value = f"=VLOOKUP(A{current_row},'ES6 - LTP Test Results'!A:B,2)"
+                current_column += 1
+                worksheet.cell(row=current_row, column=current_column).value = f'=IF(AND(C{current_row}<>F{current_row},F{current_row}<>"N/A"),"Different","OK")'
 
                 # current_column += 1
                 # worksheet.cell(row=current_row, column=current_column).value = tca._exitCode
@@ -222,34 +236,86 @@ class Generator:
         chart.title = "LTP test results"
 
         chart.style = 10
-        worksheet.add_chart(chart, "F3")
+        worksheet.add_chart(chart, "I8")
 
     @staticmethod
-    def format_excel_sheet():
-        """ format the excel sheet """
+    def create_ltp_test_report_sheet():
+        """ format the excel sheet_0, at the end apppend data """
         # Create a workbook
-        workbook = Workbook()
-        sheet = workbook.active
+        sheet_0 = Generator.workbook.active
+        sheet_0.title = 'Lava_report'
 
         bold_font = Font(bold=True, color=colors.DARKYELLOW, size=20)
 
+        sheet_0['A1'].font = bold_font
+
+        sheet_0.merge_cells('A1:D1')
+
+        sheet_0['A1'] = 'LTP Test report'  # + str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        sheet_0['A3'] = 'Module'
+        sheet_0['B3'] = 'Test Case'
+        sheet_0['C3'] = 'Result'
+        sheet_0['E3'] = 'Observations'
+        sheet_0['F3'] = 'ES6 - LTP Results'
+        sheet_0['G3'] = 'Results comparison'
+
         # set the width of the column
-        sheet.column_dimensions['A'].width = 30
-        sheet.column_dimensions['B'].width = 50
-        sheet.column_dimensions['C'].width = 10
+        sheet_0.column_dimensions['A'].width = 30
+        sheet_0.column_dimensions['B'].width = 50
+        sheet_0.column_dimensions['C'].width = 10
+        sheet_0.column_dimensions['E'].width = 20
+        sheet_0.column_dimensions['F'].width = 20
+        sheet_0.column_dimensions['G'].width = 20
 
-        sheet['A1'].font = bold_font
+        Generator.append_data_into_cells(sheet_0)
 
-        sheet.merge_cells('A1:D1')
 
-        sheet['A1'] = 'LTP Test report'  # + str(datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
-        sheet['A3'] = 'Module'
-        sheet['B3'] = 'Test Case'
-        sheet['C3'] = 'Result'
+    @staticmethod
+    def create_es6_sheet(filepath):
+        """ format the excel sheet_0, at the end apppend data """
+        # Create a workbook
+        sheet_1 = Generator.workbook.create_sheet('Sheet_B')
+        sheet_1.title = 'ES6 - LTP Test Results'
 
-        Generator.append_data_into_cells(sheet)
+        # sheet_1['A1'] = 'Test Case Name'
+        # sheet_1['B1'] = 'Result'
+        # sheet_1['C1'] = 'Exit Value'
+        sheet_1.column_dimensions['A'].width = 30
+        sheet_1.column_dimensions['B'].width = 20
+        sheet_1.column_dimensions['C'].width = 10
 
+        wb_es6 = load_workbook(filepath)
+        source = wb_es6.get_sheet_by_name('LTP_Test_Results')    # add a try catch
+
+        counter = 0
+        new_rows = []
+
+        for rrow in source.iter_rows():
+            new_rows.append([])
+            for cell in rrow:
+                new_rows[counter].append(cell.value)
+            counter += 1
+        for wrow in new_rows:
+            sheet_1.append(wrow)
+
+
+    @staticmethod
+    def create_lava_job_sheet(filepath):
+        """ format the excel sheet_0, at the end apppend data """
+        # Create a workbook
+        sheet_2 = Generator.workbook.create_sheet('Sheet_C')
+        sheet_2.title = 'Lava raw results'
+
+        with open(filepath) as file_csv:
+            reader = csv.reader(file_csv, delimiter=',')
+            for row in reader:
+                sheet_2.append(row)
+
+
+    @staticmethod
+    def save_xcel():
+        """ format the excel sheet_0 """
         try:
-            workbook.save(filename="l4b-software___testReport.xlsx")
+            Generator.workbook.save(filename="l4b-software___testReport.xlsx")
         except PermissionError as e:
             print("\n\n\n Excel file is open. Please close the excel file !!!")
