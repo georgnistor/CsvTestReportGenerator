@@ -285,7 +285,7 @@ class Generator:
         sheet_1.column_dimensions['C'].width = 10
 
         wb_es6 = load_workbook(filepath)
-        source = wb_es6.get_sheet_by_name('LTP_Test_Results')    # add a try catch
+        source = wb_es6.get_sheet_by_name('LTP_Test_Results')    # add a try catch finaly
 
         counter = 0
         new_rows = []
